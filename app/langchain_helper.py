@@ -7,7 +7,7 @@ from langchain.chains import SequentialChain
 
 class Chain:
     def __init__(self):
-        load_dotenv(dotenv_path = "../.env")
+        load_dotenv(dotenv_path = "/home/yashmeshram/Desktop/AI/LangChain/.env")
         self.llm = ChatGroq(
             model = "gemma2-9b-it",
             temperature = 0.4,

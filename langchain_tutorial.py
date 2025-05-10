@@ -5,7 +5,7 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain, SimpleSequentialChain, SequentialChain
 
 # loading api_key
-load_dotenv()
+load_dotenv(dotenv_path = "./.env")
 api_key = os.getenv("GROQ_API_KEY")
 
 # defining LLM
@@ -105,7 +105,7 @@ response
 # 2. Reasoning 
 
 # If you ask ChatGPT - what is the best chepest flight from Chennai to Delhi, today?
-# He will not know it - knowledge limited to 2021
+# He will not know it - knowledge limited to 2021 (or so)
 # we will give pulgin and then he will use Reasoning and search in pulgin, and give you a answer
 # LLM = Reasoning + Knowledge
 
@@ -124,8 +124,97 @@ tools = load_tools(
 agent = initialize_agent(
     tools,
     llm,
-    agent = AgentType.ZERO_SHOT_REACT_DESCRIPTION
+    agent = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    verbose = True
 )
 
 # running the agent
-agent.invoke("When was Elon Musk born? What is hig current age?")
+agent.invoke("When was Elon Musk born? What is his current age?")
+
+
+# using SerpApi as tool now
+# serpapi = google search api
+tools = load_tools(
+    tool_names = ['serpapi', 'llm-math'],
+    llm = llm
+)
+agent = initialize_agent(
+    tools = tools,
+    llm = llm,
+    agent = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    verbose = True
+)
+agent.invoke("What was the GDP of India in 2022 plus 5?")
+
+
+
+# *************************
+#* Memory
+# *************************
+# by default LLMs are state-less (non memory)
+chain = LLMChain(llm = llm, prompt = name_prompt)
+
+chain.run("Indian").strip()
+
+chain.run("Mexicon").strip()
+
+type(chain.memory)
+
+# I want to remember the chat
+# will attached the memory
+from langchain.memory import ConversationBufferMemory
+
+memory = ConversationBufferMemory()
+
+chain = LLMChain(
+    llm = llm,
+    prompt = name_prompt,
+    memory = memory             # have to add the memory in the chain
+)
+
+chain.run("Indian").strip()
+chain.run("Mexicon").strip()
+
+chain.memory
+print(chain.memory.buffer)
+
+# i want to create a converstaion chain and not use LLMChain
+# by default we have a convertation chain
+from langchain.chains import ConversationChain
+
+convo = ConversationChain(
+    llm = llm
+)
+
+print(convo.prompt)
+print(convo.prompt.template)
+
+convo.run("Who won the first cricket world cup?")
+convo.run("what is 5+78?")
+convo.run("In which country the match had been played?")
+
+convo.memory
+print(convo.memory.buffer)
+
+# Disadvantage = 
+# it will keep on accumulating
+# when call LLM  - all log will go there - and LLM charge per token (1 word = 1 token approx.)
+# this increase the cost
+# to handle that we can set how many past messages it should use
+from langchain.memory import ConversationBufferWindowMemory
+
+# here we set k = 2 --> LLM will remember last 2 conversation only.
+memory = ConversationBufferWindowMemory(k = 2)
+
+convo = ConversationChain(
+    llm = llm,
+    memory = memory                 # explicitly adding memory here - previously we had not added it (by default it is there). Now we had given our memory.
+)
+
+convo.run("Who won the first cricket world cup?")
+convo.run("what is 5+78?")
+print(convo.memory.buffer)
+convo.run("what is sin(45) + tan(45)?")
+print(convo.memory.buffer)
+convo.run("In which country the match had been played?")
+print(convo.memory.buffer)
