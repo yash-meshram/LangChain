@@ -1,17 +1,33 @@
-from langchain.llms import HuggingFaceHub
+import requests
+import streamlit as st 
+import re
 
-llm = HuggingFaceHub(repo_id="meta-llama/Meta-Llama-3-8B-Instruct", model_kwargs={"temperature": 0.8})
-output = llm("Write a short story about a robot who wants to be a painter.")
-print(output)
+# creating an froen-end interacting with an api
 
-from huggingface_hub import InferenceClient
-from dotenv import load_dotenv
-import os
-load_dotenv("../.env")
-os.environ["HUGGINGFACEHUB_API_TOKEN"] = os.getenv("HUGGINGFACEHUB_API_TOKEN")
+def get_chatgroq_response(input_text):
+    response = requests.post(
+        "http://localhost:8000/essay/invoke",
+        json = {'input': {'topic': input_text}}
+    )
+    return response.json()['output']['content']
 
-client = InferenceClient(model="meta-llama/Meta-Llama-3-8B-Instruct")
-response = client.text_generation("Write a short story about a robot who wants to be a painter.", 
-                                  max_new_tokens=200, 
-                                  temperature=0.8)
-print(response)
+def get_deepseek_response(input_text):
+    response = requests.post(
+        "http://localhost:8000/poem/invoke",
+        json = {'input': {'topic': input_text}}
+    )
+    response = response.json()['output']['content']
+    response = re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL)
+    return response
+
+
+st.title('Langchain langserve')
+input_test1 = st.text_input("Write an essay on")
+input_test2 = st.text_input("Write an poem on")
+
+if input_test1:
+    st.write("Essay:\n\n",get_chatgroq_response(input_test1))
+    
+if input_test2:
+    st.write("Poem:\n",get_deepseek_response(input_test2))
+    

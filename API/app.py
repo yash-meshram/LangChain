@@ -20,11 +20,11 @@ app = FastAPI(
 )
 
 # adding routes
-add_routes(
-    app,
-    ChatGroq(),
-    path = "/openai"
-)
+# add_routes(
+#     app,
+#     ChatGroq(model = "llama-3.1-8b-instant"),
+#     path = "/api"
+# )
 
 # Groq LLM
 llm1 = ChatGroq(
@@ -33,9 +33,30 @@ llm1 = ChatGroq(
 )
 
 llm2 = ChatGroq(
-    model = "llama-3.1-8b-instant",
+    model = "deepseek-r1-distill-llama-70b",
     temperature = 0.5
 )
 
 # prompt
-prompt = ChatPromptTemplate
+prompt1 = ChatPromptTemplate.from_template(
+    "Write me an essay about {topic} with 100 words."
+)
+prompt2 = ChatPromptTemplate.from_template(
+    "Write me a poem about {topic} with 100 words."
+)
+
+add_routes(
+    app,
+    prompt1 | llm1,
+    path = "/essay"
+)
+add_routes(
+    app,
+    prompt2 | llm2,
+    path = "/poem"
+)
+# I had created 2 api
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host = "localhost", port = 8000)
