@@ -1,7 +1,7 @@
 from langchain_community.document_loaders import PyPDFLoader
 
 loader = PyPDFLoader(
-    file_path = "./Deep_Learning_A_Visual_Approach.pdf"
+    file_path = "../data/Deep_Learning_A_Visual_Approach.pdf"
 )
 
 docs = loader.load()
@@ -74,6 +74,11 @@ embedding = HuggingFaceEmbeddings(
 vector_store = InMemoryVectorStore.from_documents(
     pages, embedding
 )
+
+# saving the vectoe store
+import pickle
+with open("../data/vector_store.pkl", 'wb') as f:
+    pickle.dump(vector_store, f)
 
 question = "What is meant by Decision Tree?"
 
