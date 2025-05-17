@@ -119,7 +119,7 @@ client = MongoClient(MONGODB_ATLAS_CLUSTER_URI)
 
 DB_NAME = "langchain_test_db"
 COLLECTION_NAME = "langchain_test_vectorstores"
-ATLAS_VECTOR_SEARCH_INDEX_NAME = "langchain_test_index_vectorstores"
+ATLAS_VECTOR_SEARCH_INDEX_NAME = "langchain_test_index"
 MONGODB_COLLECTION = client[DB_NAME][COLLECTION_NAME]
 
 vector_store_mongodb = MongoDBAtlasVectorSearch(
@@ -138,5 +138,66 @@ len(all_splits)
 print(ids[0])
 
 # similarity search
-response = vector_store_mongodb.similarity_search(query = "learning", k = 2)
+response = vector_store_mongodb.similarity_search(query = "deep", k = 5)
 print(response)
+
+# Print the page_content of each document from response
+for i, doc in enumerate(response):
+    print(f"\n--- Result {i+1} ---")
+    print(doc.page_content)
+    print(doc.metadata)
+    
+# combining the page_content from each doc to one
+from utils import clean_text
+doc_content = []
+for doc in response:
+    doc_content.append(clean_text(doc.page_content))
+print(doc_content)
+
+
+
+# Model
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+llm = ChatGoogleGenerativeAI(
+    model = "gemini-2.0-flash"
+)
+
+
+
+# Prompt
+from langchain_core.prompts import PromptTemplate
+prompt = PromptTemplate.from_template(
+    '''
+    ## QUESTION:
+    {question}
+    
+    ## CONTENT:
+    {doc_content}
+    
+    ## INSTRUCTION:
+    Based on the content provided in 'CONTENT' section. Answer the question mentioned in 'QUESTION' section.
+    Your answer should be based on the content provided in 'CONTENT' section only.
+    If you are not able to get the answer then return the answer as 'No information in the given documents.'
+    Do not return preamble in answer.
+    
+    ## AMSWER (NO PREAMBLE):
+    '''
+)
+
+
+# chain
+chain = prompt | llm
+
+# defining question
+question = "What is mean by Neural Network"
+
+# running the chain
+response = chain.invoke(
+    input = {
+        'question': question,
+        'doc_content': doc_content
+    }
+)
+print(response.content)
+
