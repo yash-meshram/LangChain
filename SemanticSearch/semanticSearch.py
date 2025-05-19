@@ -155,6 +155,61 @@ for doc in response:
 print(doc_content)
 
 
+# similarity search with score
+response = vector_store_mongodb.similarity_search_with_score(
+    query = "deep learning",
+    k = 2
+)
+print(response)
+doc, score = response[0]
+print(score)
+for i, doc_tuple in enumerate(response):
+    print(f"\n--- Result {i+1} ---")
+    doc, score = doc_tuple
+    print(f"Score = {score}")
+    print(doc.page_content)
+
+
+# return doc based on similarity to an embedding query
+response = vector_store_mongodb.similarity_search_by_vector(
+    embedding = embedding.embed_query("What is neural network?"),
+    k = 2
+)
+print(response)
+
+
+
+# Retriever
+# retrivers are not limited to vector stores. They can also pull data from other sources like external APIs, databases, or other systems.
+from langchain_core.runnables import chain
+from langchain_core.documents import Document
+from typing import List
+
+@chain
+def retriever(query: str) -> List[Document]:
+    return vector_store_mongodb.similarity_search(query, k = 1)
+
+# batch will run in paraller
+retriever.batch(
+    [
+        "What is sigmoid function?",
+        "what is ReLu"
+    ]
+)
+
+# another method
+retriever_ = vector_store_mongodb.as_retriever(
+    search_type = 'similarity',
+    search_kwargs = {'k': 2}
+)
+retriever_.batch(
+    [
+        "where is sigmoid function is used?",
+        "where is ReLu function is used"
+    ]
+)
+
+
 
 # Model
 from langchain_google_genai import ChatGoogleGenerativeAI
